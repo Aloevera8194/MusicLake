@@ -4,6 +4,7 @@ import com.cyl.musiclake.bean.*
 import com.cyl.musiclake.common.Constants
 import com.cyl.musiclake.ui.download.TasksManagerModel
 import com.cyl.musiclake.utils.FileUtils
+import com.music.lake.musiclib.bean.BaseMusicInfo
 import org.litepal.LitePal
 
 /**
@@ -60,11 +61,13 @@ object DaoLitepal {
      * 播放歌单操作
      **********************************
      */
-    fun saveOrUpdateMusic(music: Music, isAsync: Boolean = false) {
+    fun saveOrUpdateMusic(baseMusicInfoInfo: BaseMusicInfo, isAsync: Boolean = false) {
+        val songInfo = SongInfo()
+        songInfo.parseByMusicInfo(baseMusicInfoInfo)
         if (isAsync) {
-            music.saveOrUpdateAsync("mid = ?", music.mid)
+            songInfo.saveOrUpdateAsync("mid = ?", songInfo.mid)
         } else {
-            music.saveOrUpdate("mid = ?", music.mid)
+            songInfo.saveOrUpdate("mid = ?", songInfo.mid)
         }
     }
 
@@ -73,11 +76,11 @@ object DaoLitepal {
      * 扫描更新本地歌曲信息，如果
      */
 //    fun saveOrUpdateLocalMusic(music: Music, isAsync: Boolean = false) {
-//        val downloadInfo = LitePal.where("path = ?", music.uri).find(TasksManagerModel::class.java)
+//        val downloadInfo = LitePal.where("path = ?", songinfo.uri).find(TasksManagerModel::class.java)
 //        downloadInfo?.size?.let {
 //            if (it > 0) {
 //            } else {
-//                music.saveOrUpdate("mid = ?", music.mid)
+//                songinfo.saveOrUpdate("mid = ?", songinfo.mid)
 //            }
 //        }
 //    }
@@ -85,13 +88,13 @@ object DaoLitepal {
     /**
      * 添加歌曲到歌单
      */
-    fun addToPlaylist(music: Music, pid: String): Boolean {
-        saveOrUpdateMusic(music)
-        val count = LitePal.where("mid = ? and pid = ?", music.mid, pid)
+    fun addToPlaylist(baseMusicInfoInfo: BaseMusicInfo, pid: String): Boolean {
+        saveOrUpdateMusic(baseMusicInfoInfo)
+        val count = LitePal.where("mid = ? and pid = ?", baseMusicInfoInfo.mid, pid)
                 .count(MusicToPlaylist::class.java)
         return if (count == 0) {
             val mtp = MusicToPlaylist()
-            mtp.mid = music.mid
+            mtp.mid = baseMusicInfoInfo.mid
             mtp.pid = pid
             mtp.total = 1
             mtp.createDate = System.currentTimeMillis()
@@ -101,7 +104,7 @@ object DaoLitepal {
             val mtp = MusicToPlaylist()
             mtp.total++
             mtp.updateDate = System.currentTimeMillis()
-            mtp.saveOrUpdate("mid = ? and pid =?", music.mid, pid)
+            mtp.saveOrUpdate("mid = ? and pid =?", baseMusicInfoInfo.mid, pid)
         }
     }
 
@@ -113,21 +116,23 @@ object DaoLitepal {
     /**
      * 删除本地歌曲（Music、MusicToPlaylist）
      */
-    fun deleteMusic(music: Music) {
-        val cachePath = FileUtils.getMusicCacheDir() + music.artist + " - " + music.title + "(" + music.quality + ")"
-        val downloadPath = FileUtils.getMusicDir() + music.artist + " - " + music.title + ".mp3"
+    fun deleteMusic(music: BaseMusicInfo) {
+        val songInfo = SongInfo()
+        songInfo.parseByMusicInfo(music)
+        val cachePath = FileUtils.getMusicCacheDir() + songInfo.artist + " - " + songInfo.title + "(" + songInfo.quality + ")"
+        val downloadPath = FileUtils.getMusicDir() + songInfo.artist + " - " + songInfo.title + ".mp3"
         if (FileUtils.exists(cachePath)) {
             FileUtils.delFile(cachePath)
         }
         if (FileUtils.exists(downloadPath)) {
             FileUtils.delFile(downloadPath)
         }
-        if (FileUtils.exists(music.uri)) {
-            FileUtils.delFile(music.uri)
+        if (FileUtils.exists(songInfo.uri)) {
+            FileUtils.delFile(songInfo.uri)
         }
-        LitePal.deleteAll(Music::class.java, "mid=?", music.mid.toString())
-        LitePal.deleteAll(TasksManagerModel::class.java, "mid=?", music.mid.toString())
-        LitePal.deleteAll(MusicToPlaylist::class.java, "mid=?", music.mid.toString())
+        LitePal.deleteAll(SongInfo::class.java, "mid=?", songInfo.mid.toString())
+        LitePal.deleteAll(TasksManagerModel::class.java, "mid=?", songInfo.mid.toString())
+        LitePal.deleteAll(MusicToPlaylist::class.java, "mid=?", songInfo.mid.toString())
     }
 
     /**
@@ -150,22 +155,28 @@ object DaoLitepal {
      * 根据pid获取本地歌单所有歌曲
      * @param pid
      */
-    fun getMusicList(pid: String, order: String = ""): MutableList<Music> {
-        val musicLists = mutableListOf<Music>()
+    fun getMusicList(pid: String, order: String = ""): MutableList<BaseMusicInfo> {
+        val musicLists = mutableListOf<BaseMusicInfo>()
         when (pid) {
             Constants.PLAYLIST_LOVE_ID -> {
-                val data = LitePal.where("isLove = ? ", "1").find(Music::class.java)
-                musicLists.addAll(data)
+                val data = LitePal.where("isLove = ? ", "1").find(SongInfo::class.java)
+                data.forEach {
+                    musicLists.add(it.convertToMusicInfo())
+                }
             }
             Constants.PLAYLIST_LOCAL_ID -> {
-                val data = LitePal.where("isOnline = ? ", "0").find(Music::class.java)
-                musicLists.addAll(data)
+                val data = LitePal.where("isOnline = ? ", "0").find(SongInfo::class.java)
+                data.forEach {
+                    musicLists.add(it.convertToMusicInfo())
+                }
             }
             else -> {
                 val data = LitePal.where("pid = ?", pid).order(order).find(MusicToPlaylist::class.java)
                 for (it in data) {
-                    val musicList = LitePal.where("mid = ?", it.mid).find(Music::class.java)
-                    musicLists.addAll(musicList)
+                    val data1 = LitePal.where("mid = ?", it.mid).find(SongInfo::class.java)
+                    data1.forEach {
+                        musicLists.add(it.convertToMusicInfo())
+                    }
                 }
             }
         }
@@ -179,7 +190,6 @@ object DaoLitepal {
         return LitePal.where("type = ?", Constants.PLAYLIST_LOCAL_ID).find(Playlist::class.java)
     }
 
-
     /**
      * 根据pid获取本地歌单
      * @param pid
@@ -188,16 +198,21 @@ object DaoLitepal {
         return LitePal.where("pid = ?", pid).findFirst(Playlist::class.java)
     }
 
-    fun getMusicInfo(mid: String): Music? {
-        return LitePal.where("mid = ? ", mid).findFirst(Music::class.java)
+    fun getMusicInfo(mid: String): BaseMusicInfo? {
+        return LitePal.where("mid = ? ", mid).findFirst(SongInfo::class.java).convertToMusicInfo()
     }
 
     fun removeSong(pid: String, mid: String) {
         LitePal.deleteAll(MusicToPlaylist::class.java, "pid=? and mid=?", pid, mid)
     }
 
-    fun searchLocalMusic(info: String): MutableList<Music> {
-        return LitePal.where("title LIKE ? or artist LIKE ? or album LIKE ?", "%$info%", "%$info%", "%$info%").find(Music::class.java)
+    fun searchLocalMusic(info: String): MutableList<BaseMusicInfo> {
+        val data = LitePal.where("title LIKE ? or artist LIKE ? or album LIKE ?", "%$info%", "%$info%", "%$info%").find(SongInfo::class.java)
+        val musicList = mutableListOf<BaseMusicInfo>()
+        data.forEach {
+            musicList.add(it.convertToMusicInfo())
+        }
+        return musicList
     }
 
     fun getAllAlbum(): MutableList<Album> {
@@ -210,7 +225,7 @@ object DaoLitepal {
 
 
     fun updateArtistList(): MutableList<Artist> {
-        val sql = "SELECT music.artistid,music.artist,count(music.title) as num FROM music where music.isonline=0 and music.type=\"local\" GROUP BY music.artist"
+        val sql = "SELECT songinfo.artistid,songinfo.artist,count(songinfo.title) as num FROM songinfo where songinfo.isonline=0 and songinfo.type=\"local\" GROUP BY songinfo.artist"
         val cursor = LitePal.findBySQL(sql)
         val results = mutableListOf<Artist>()
         if (cursor != null && cursor.count > 0) {
@@ -227,7 +242,7 @@ object DaoLitepal {
 
 
     fun updateAlbumList(): MutableList<Album> {
-        val sql = "SELECT music.albumid,music.album,music.artistid,music.artist,count(music.title) as num FROM music WHERE music.isonline=0 and music.type=\"local\" GROUP BY music.album"
+        val sql = "SELECT songinfo.albumid,songinfo.album,songinfo.artistid,songinfo.artist,count(songinfo.title) as num FROM songinfo WHERE songinfo.isonline=0 and songinfo.type=\"local\" GROUP BY songinfo.album"
         val cursor = LitePal.findBySQL(sql)
         val results = mutableListOf<Album>()
         if (cursor != null && cursor.count > 0) {

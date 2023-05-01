@@ -1,26 +1,23 @@
 package com.cyl.musiclake.ui.music.importplaylist
 
 import android.content.Intent
-import androidx.recyclerview.widget.LinearLayoutManager
 import android.view.View
-import com.afollestad.materialdialogs.MaterialDialog
 import com.cyl.musiclake.R
 import com.cyl.musiclake.api.music.MusicApiServiceImpl
 import com.cyl.musiclake.api.net.ApiManager
 import com.cyl.musiclake.api.net.RequestCallBack
-import com.cyl.musiclake.bean.Music
 import com.cyl.musiclake.bean.Playlist
 import com.cyl.musiclake.common.Constants
-import com.cyl.musiclake.common.NavigationHelper
-import com.cyl.musiclake.player.PlayManager
-import com.cyl.musiclake.ui.music.edit.PlaylistManagerUtils
 import com.cyl.musiclake.ui.base.BaseActivity
 import com.cyl.musiclake.ui.base.BaseContract
 import com.cyl.musiclake.ui.base.BasePresenter
 import com.cyl.musiclake.ui.music.dialog.BottomDialogFragment
+import com.cyl.musiclake.ui.music.edit.PlaylistManagerUtils
 import com.cyl.musiclake.ui.music.local.adapter.SongAdapter
 import com.cyl.musiclake.utils.LogUtil
 import com.cyl.musiclake.utils.ToastUtils
+import com.music.lake.musiclib.MusicPlayerManager
+import com.music.lake.musiclib.bean.BaseMusicInfo
 import kotlinx.android.synthetic.main.activity_import_playlist.*
 
 
@@ -30,7 +27,7 @@ class ImportPlaylistActivity : BaseActivity<BasePresenter<BaseContract.BaseView>
     var mAdapter: SongAdapter? = null
     var name: String? = null
     var vendor: String? = null
-    var musicList = mutableListOf<Music>()
+    var musicList = mutableListOf<BaseMusicInfo>()
 
     override fun getLayoutResID(): Int {
         return R.layout.activity_import_playlist
@@ -154,7 +151,7 @@ class ImportPlaylistActivity : BaseActivity<BasePresenter<BaseContract.BaseView>
 
         mAdapter?.setOnItemClickListener { adapter, view, position ->
             if (view.id != R.id.iv_more) {
-                PlayManager.play(position, result.musicList, Constants.PLAYLIST_DOWNLOAD_ID + result.pid)
+                MusicPlayerManager.getInstance().playMusic(result.musicList, position)
                 mAdapter?.notifyDataSetChanged()
             }
         }

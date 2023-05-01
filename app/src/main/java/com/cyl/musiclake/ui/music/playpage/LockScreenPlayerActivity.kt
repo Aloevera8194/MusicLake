@@ -7,12 +7,11 @@ import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import com.cyl.musiclake.R
-import com.cyl.musiclake.bean.Music
 import com.cyl.musiclake.common.TransitionAnimationUtils
-import com.cyl.musiclake.player.PlayManager
 import com.cyl.musiclake.ui.base.BaseActivity
 import com.cyl.musiclake.utils.FormatUtil
-import com.cyl.musiclake.utils.SPUtils
+import com.music.lake.musiclib.bean.BaseMusicInfo
+import com.music.lake.musiclib.MusicPlayerManager
 import kotlinx.android.synthetic.main.activity_lock_screen.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -41,19 +40,29 @@ class LockScreenPlayerActivity : BaseActivity<PlayPresenter>(), PlayContract.Vie
         playPauseIv.setImageResource(if (isPlaying) R.drawable.ic_play else R.drawable.ic_pause);
     }
 
+    override fun updateLoading(isLoading: Boolean) {
+    }
+
+    override fun updateProgress(progress: Long, max: Long, bufferPercent: Int) {
+        runOnUiThread {
+            //获取当前时间
+            timeTv.text = simpleDateFormat?.format(Date(System.currentTimeMillis()))
+        }
+    }
+
     override fun getLayoutResID(): Int {
         return R.layout.activity_lock_screen
     }
 
     override fun initView() {
         prevIv.setOnClickListener {
-            PlayManager.prev()
+            MusicPlayerManager.getInstance().playPrevMusic()
         }
         playPauseIv.setOnClickListener {
-            PlayManager.playPause()
+            MusicPlayerManager.getInstance().pausePlay()
         }
         nextIv.setOnClickListener {
-            PlayManager.next()
+            MusicPlayerManager.getInstance().playNextMusic()
         }
     }
 
@@ -61,15 +70,9 @@ class LockScreenPlayerActivity : BaseActivity<PlayPresenter>(), PlayContract.Vie
         mActivityComponent.inject(this)
     }
 
-
-    override fun updateProgress(progress: Long, max: Long) {
-        //获取当前时间
-        timeTv.text = simpleDateFormat?.format(Date(System.currentTimeMillis()))
-    }
-
-    override fun showNowPlaying(music: Music?) {
-        songNameTv.text = music?.title
-        singerTv.text = music?.artist
+    override fun showNowPlaying(baseMusic: BaseMusicInfo?) {
+        songNameTv.text = baseMusic?.title
+        singerTv.text = baseMusic?.artist
     }
 
     private var animationDrawable: AnimationDrawable? = null

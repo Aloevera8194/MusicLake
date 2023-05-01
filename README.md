@@ -1,13 +1,13 @@
-# MusicLake
-![Workflow result](https://github.com/caiyonglong/MusicLake/workflows/Check/badge.svg)
+# MusicLake [![Build Status](https://travis-ci.org/caiyonglong/MusicLake.svg?branch=develop)](https://travis-ci.org/caiyonglong/MusicLake)
 
-[MediaPlayer、ExoPlayer音乐库封装](https://github.com/caiyonglong/MusicLake/tree/dev_musiclib)
 
-# 因收到网易云音乐和QQ音乐的官方警告函，我们已关闭app的相关api服务,不再提供任何apk。
+# 前言
 
-# 编译&服务器部署 
- [build.md](BUILD.md)
+当前分支，是一个音乐播放器封装库， 集成了 **MediaPlayer**、**ExoPlayer**。
 
+由于时间原因，目前只是一个初步的框架，所以可能存在很大的问题，目前音乐播放功能基本可以了，对于框架封装的完整性，通用性，可能还有待提升。
+
+  
 # 功能版本
 - Android 音乐播放器(本地/在线播放) （最低支持Android版本5.0）
 - 支持多平台音乐源，百度音乐，虾米音乐、网易云音乐、Youtube（需要翻墙）
@@ -16,18 +16,18 @@
 - QQ登录、微博登陆、在线歌单同步
 - 网易云热门歌手，百度电台列表，网易云mv排行榜，mv播放评论
 - 酷狗歌词搜索、修改歌词样式、歌词翻译
+- 精力有限，需求不饱和都会逐步完善
 - [PC端](https://github.com/sunzongzheng/music)
 
-### 开源不易，有兴趣可给个star，支持一下哦！
-- 群聊已经解散，有什么问题可以提[issues](https://github.com/caiyonglong/MusicLake/issues)！，有想法可以提PR。感谢关注🙏
+- [交流群:549939157](https://jq.qq.com/?_wv=1027&k=5XrNrCJ) 加群需要问题验证，正确回答：github
 
 ![功能](screenshots/features.png)
 
-# 计划
-- [ ] 整理文档
-    - [musicApi接入和调试文档](./doc/音乐接口组件库接入.md)
-- [ ] 代码重构
 
+### 开源不易，有兴趣可给个star，支持一下哦！
+持续更新，有什么问题可以提[issues](https://github.com/caiyonglong/MusicLake/issues)！
+
+ 
 # 相关项目|音乐API
 - [客户端音乐API](https://github.com/caiyonglong/MusicApi)
 - [客户端/PC音乐共用API](https://github.com/sunzongzheng/musicApi)
@@ -46,13 +46,6 @@
 - [More..](https://github.com/caiyonglong/MusicLake/blob/develop/app/build.gradle)
 
 # 软件运行截图
-
-
-
-    因为github限制，所有图片预览需要翻强或者git clone到本地才能预览
-
-
-
 <p>
 <img src="screenshots/preview1.png" width="225" height="400"/>
 <img src="screenshots/preview2.png" width="225" height="400"/>

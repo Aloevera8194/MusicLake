@@ -4,23 +4,23 @@ import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.graphics.Bitmap
-import androidx.appcompat.app.AppCompatActivity
 import android.view.View
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
+import androidx.appcompat.app.AppCompatActivity
 import com.cyl.musiclake.R
-import com.cyl.musiclake.bean.Music
 import com.cyl.musiclake.common.Constants
 import com.cyl.musiclake.common.Extras
 import com.cyl.musiclake.common.NavigationHelper
-import com.cyl.musiclake.player.PlayManager
 import com.cyl.musiclake.ui.base.BaseContract
 import com.cyl.musiclake.ui.base.BaseFragment
 import com.cyl.musiclake.ui.base.BasePresenter
 import com.cyl.musiclake.ui.music.dialog.QualitySelectDialog
 import com.cyl.musiclake.ui.music.search.SearchActivity
 import com.cyl.musiclake.utils.LogUtil
+import com.music.lake.musiclib.MusicPlayerManager
+import com.music.lake.musiclib.bean.BaseMusicInfo
 import kotlinx.android.synthetic.main.frag_player_coverview.*
 import org.jetbrains.anko.support.v4.startActivity
 
@@ -60,7 +60,7 @@ class CoverFragment : BaseFragment<BasePresenter<BaseContract.BaseView>>() {
 
         //音质点击
         tv_quality.setOnClickListener {
-            QualitySelectDialog.newInstance(PlayManager.getPlayingMusic()).apply {
+            QualitySelectDialog.newInstance(MusicPlayerManager.getInstance().nowPlayingMusic).apply {
                 changeSuccessListener = {
                     this@CoverFragment.tv_quality.text = it
                 }
@@ -86,11 +86,11 @@ class CoverFragment : BaseFragment<BasePresenter<BaseContract.BaseView>>() {
      * 更新歌曲類型
      * 更新音乐品质
      */
-    fun updateMusicType(playingMusic: Music) {
+    fun updateMusicType(playingBaseMusicInfoInfo: BaseMusicInfo) {
         if (context == null) return
-        LogUtil.d(TAG, "CoverFragment = ${playingMusic.type}")
-        searchInfo = playingMusic.title + "-" + playingMusic.artist
-        val value: String? = when (playingMusic?.type) {
+        LogUtil.d(TAG, "CoverFragment = ${playingBaseMusicInfoInfo.type}")
+        searchInfo = playingBaseMusicInfoInfo.title + "-" + playingBaseMusicInfoInfo.artist
+        val value: String? = when (playingBaseMusicInfoInfo?.type) {
             Constants.QQ -> {
                 getString(R.string.res_qq)
             }
@@ -107,7 +107,7 @@ class CoverFragment : BaseFragment<BasePresenter<BaseContract.BaseView>>() {
                 getString(R.string.res_local)
             }
         }
-        val quality = when (playingMusic.quality) {
+        val quality = when (playingBaseMusicInfoInfo.quality) {
             128000 -> getString(R.string.sound_quality_standard)
             192000 -> getString(R.string.sound_quality_high)
             320000 -> getString(R.string.sound_quality_hq_high)
@@ -275,7 +275,7 @@ class CoverFragment : BaseFragment<BasePresenter<BaseContract.BaseView>>() {
 
     override fun onResume() {
         super.onResume()
-        if (coverAnimator != null && coverAnimator?.isPaused!! && PlayManager.isPlaying()) {
+        if (coverAnimator != null && coverAnimator?.isPaused!! && MusicPlayerManager.getInstance().isPlaying()) {
             coverAnimator?.resume()
         }
     }

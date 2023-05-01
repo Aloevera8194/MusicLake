@@ -3,8 +3,8 @@ package com.cyl.musiclake.bean
 import android.os.Parcel
 import android.os.Parcelable
 import com.cyl.musiclake.common.Constants
+import com.music.lake.musiclib.bean.BaseMusicInfo
 import org.litepal.crud.LitePalSupport
-import java.io.Serializable
 
 /**
  * Created by yonglong on 2016/11/23.
@@ -23,7 +23,7 @@ class Artist() : LitePalSupport(), Parcelable {
     var albumSize: Int = 0
     var followed: Boolean = false
 
-    var songs = mutableListOf<Music>()
+    var songs = mutableListOf<BaseMusicInfo>()
 
     constructor(parcel: Parcel) : this() {
         name = parcel.readString()

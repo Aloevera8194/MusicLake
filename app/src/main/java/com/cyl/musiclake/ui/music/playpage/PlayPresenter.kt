@@ -1,11 +1,16 @@
 package com.cyl.musiclake.ui.music.playpage
 
+import android.annotation.SuppressLint
 import com.cyl.musiclake.ui.base.BasePresenter
-import com.cyl.musiclake.bean.Music
-import com.cyl.musiclake.player.MusicPlayerService
-import com.cyl.musiclake.player.playback.PlayProgressListener
 import com.cyl.musiclake.utils.CoverLoader
 import com.cyl.musiclake.utils.ImageUtils
+import com.music.lake.musiclib.MusicPlayerManager
+import com.music.lake.musiclib.bean.BaseMusicInfo
+import com.music.lake.musiclib.listener.MusicPlayEventListener
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import javax.inject.Inject
@@ -16,24 +21,23 @@ import javax.inject.Inject
  */
 
 class PlayPresenter @Inject
-constructor() : BasePresenter<PlayContract.View>(), PlayContract.Presenter, PlayProgressListener {
-    override fun onProgressUpdate(position: Long, duration: Long) {
-        mView?.updateProgress(position, duration)
-    }
+constructor() : BasePresenter<PlayContract.View>(), PlayContract.Presenter, MusicPlayEventListener {
+    private var disposable: Disposable? = null
 
     override fun attachView(view: PlayContract.View) {
         super.attachView(view)
-        MusicPlayerService.addProgressListener(this)
+        MusicPlayerManager.getInstance().addMusicPlayerEventListener(this)
     }
 
     override fun detachView() {
         super.detachView()
-        MusicPlayerService.removeProgressListener(this)
+        disposable?.dispose()
+        MusicPlayerManager.getInstance().removeMusicPlayerEventListener(this)
     }
 
-    override fun updateNowPlaying(music: Music?, isInit: Boolean?) {
-        mView?.showNowPlaying(music)
-        CoverLoader.loadBigImageView(mView?.context, music) { bitmap ->
+    override fun updateNowPlaying(baseMusic: BaseMusicInfo?, isInit: Boolean?) {
+        mView?.showNowPlaying(baseMusic)
+        CoverLoader.loadBigImageView(mView?.context, baseMusic) { bitmap ->
             doAsync {
                 val blur = ImageUtils.createBlurredImageFromBitmap(bitmap, 10)
                 uiThread {
@@ -43,4 +47,46 @@ constructor() : BasePresenter<PlayContract.View>(), PlayContract.Presenter, Play
             }
         }
     }
+
+    @SuppressLint("CheckResult")
+    override fun onLoading(isLoading: Boolean) {
+        Observable.create<Boolean> { sub -> sub.onNext(isLoading) }.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    mView?.updateLoading(it)
+                }
+    }
+
+    override fun onPlaybackProgress(curPosition: Long, duration: Long, bufferPercent: Int) {
+        mView?.updateProgress(MusicPlayerManager.getInstance().getPlayingPosition(), MusicPlayerManager.getInstance().getDuration(), bufferPercent)
+    }
+
+    override fun onAudioSessionId(audioSessionId: Int) {
+    }
+
+    override fun onPlayCompletion() {
+    }
+
+    override fun onPlayStart() {
+    }
+
+    @SuppressLint("CheckResult")
+    override fun onPlayerStateChanged(isPlaying: Boolean) {
+        Observable.create<Boolean> { sub -> sub.onNext(true) }.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    mView?.updatePlayStatus(isPlaying)
+                }
+    }
+
+    override fun onPlayStop() {
+    }
+
+    override fun onPlayerError(error: Throwable?) {
+    }
+
+    override fun onUpdatePlayList(playlist: MutableList<BaseMusicInfo>) {
+
+    }
+
 }

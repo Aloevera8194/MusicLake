@@ -7,11 +7,11 @@ import android.content.Intent
 import android.media.MediaScannerConnection
 import android.media.audiofx.AudioEffect
 import android.net.Uri
-import androidx.core.app.ActivityCompat
-import androidx.core.app.ActivityOptionsCompat
-import androidx.appcompat.app.AppCompatActivity
 import android.util.Pair
 import android.view.View
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityOptionsCompat
 import com.cyl.musiclake.MusicApp
 import com.cyl.musiclake.R
 import com.cyl.musiclake.bean.Album
@@ -19,8 +19,6 @@ import com.cyl.musiclake.bean.Artist
 import com.cyl.musiclake.bean.FolderInfo
 import com.cyl.musiclake.bean.Playlist
 import com.cyl.musiclake.event.PlaylistEvent
-import com.cyl.musiclake.player.MusicPlayerService
-import com.cyl.musiclake.player.PlayManager
 import com.cyl.musiclake.ui.download.ui.DownloadFragment
 import com.cyl.musiclake.ui.main.MainActivity
 import com.cyl.musiclake.ui.music.artist.activity.ArtistDetailActivity
@@ -34,6 +32,9 @@ import com.cyl.musiclake.ui.music.playqueue.PlayQueueFragment
 import com.cyl.musiclake.utils.FileUtils
 import com.cyl.musiclake.utils.LogUtil
 import com.cyl.musiclake.utils.ToastUtils
+import com.music.lake.musiclib.MusicPlayerManager
+import com.music.lake.musiclib.notification.NotifyManager
+import com.music.lake.musiclib.service.MusicPlayerService
 import org.greenrobot.eventbus.EventBus
 import java.io.File
 
@@ -80,7 +81,7 @@ object NavigationHelper {
     fun navigateToSoundEffect(context: Activity) {
         try {
             val effects = Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL)
-            effects.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, PlayManager.getAudioSessionId())
+            effects.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, MusicPlayerManager.getInstance().AudioSessionId())
             context.startActivityForResult(effects, 666)
         } catch (e: Exception) {
             ToastUtils.show("设备不支持均衡！")
@@ -201,22 +202,18 @@ object NavigationHelper {
 
 
     fun navigateToPlaying(context: Activity, transitionView: View? = null) {
-        val intent = Intent(context, PlayerActivity::class.java)
-        if (transitionView != null) {
-            val compat = ActivityOptionsCompat.makeScaleUpAnimation(transitionView,
-                    transitionView.width / 2, transitionView.height / 2, 0, 0)
-//            val compat = ActivityOptionsCompat.makeSceneTransitionAnimation(context,
-//                    transitionView, MusicApp.getAppContext().getString(R.string.transition_cover))
-            ActivityCompat.startActivity(context, intent, compat.toBundle())
-        } else {
+        if (MusicPlayerManager.getInstance().nowPlayingMusic != null) {
+            val intent = Intent(context, PlayerActivity::class.java)
             context.startActivity(intent)
+        } else {
+            ToastUtils.show("当前暂无播放歌曲")
         }
     }
 
 
     fun getNowPlayingIntent(context: Context): Intent {
         val intent = Intent(context, MainActivity::class.java)
-        intent.action = Constants.DEAULT_NOTIFICATION
+//        intent.action = Constants.DEAULT_NOTIFICATION
         return intent
     }
 
@@ -226,7 +223,7 @@ object NavigationHelper {
     }
 
     fun getLyricIntent(context: Context): Intent {
-        val intent = Intent(MusicPlayerService.ACTION_LYRIC)
+        val intent = Intent(NotifyManager.ACTION_LYRIC)
         intent.component = ComponentName(context, MusicPlayerService::class.java)
         return intent
     }
@@ -235,7 +232,7 @@ object NavigationHelper {
      * 下一首
      */
     fun getNextIntent(context: Context): Intent {
-        val intent = Intent(MusicPlayerService.ACTION_NEXT)
+        val intent = Intent(NotifyManager.ACTION_NEXT)
         intent.component = ComponentName(context, MusicPlayerService::class.java)
         return intent
     }
@@ -244,7 +241,7 @@ object NavigationHelper {
      * 上一首
      */
     fun getPrevIntent(context: Context): Intent {
-        val intent = Intent(MusicPlayerService.ACTION_PREV)
+        val intent = Intent(NotifyManager.ACTION_PREV)
         intent.component = ComponentName(context, MusicPlayerService::class.java)
         return intent
     }
@@ -253,7 +250,7 @@ object NavigationHelper {
      * 暂停
      */
     fun getPlayPauseIntent(context: Context): Intent {
-        val intent = Intent(MusicPlayerService.ACTION_PREV)
+        val intent = Intent(NotifyManager.ACTION_PREV)
         intent.component = ComponentName(context, MusicPlayerService::class.java)
         return intent
     }
